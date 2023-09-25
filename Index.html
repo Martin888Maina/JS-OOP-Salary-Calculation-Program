@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    body{
+        font-family: Arial, Helvetica, sans-serif;
+    }
+    .title-1{
+        text-align: center;
+    }
+</style>
+<body>
+
+            <h1 class="title-1">JAVASCRIPT OBJECT ORIENTED PROGRAMMING</h1>
+            <h1 class="title-1">PROGRAM TO CALCULATE EMPLOYEE SALARY USING OBJECT ORIENTED PROGRAMMING PRINCIPLES</h1>
+
+<script>
+
+            //Class creation - base class
+            class Employee {
+                    //abstracted properties
+                    #firstname;
+                    #lastname;
+                    #department;
+                    #hoursWorked;
+                    #amountperHour;
+                    #salary
+
+            constructor (firstname, lastname, department, hoursWorked, amountperHour){
+                //properties
+                this.#firstname     = firstname;
+                this.#lastname      = lastname;
+                this.#department    = department;
+                this.#hoursWorked   = hoursWorked;
+                this.#amountperHour = amountperHour;
+                this.#salary        = this.#hoursWorked * this.#amountperHour;
+            }
+            //setters
+            set setfirstname(val){
+                this.#firstname = val;
+            }
+
+            set setlastname(val){
+                this.#lastname = val;
+            }
+
+            set setdepartment(val){
+                this.#department = val;
+            }
+
+            set sethoursworked(val){
+                this.#hoursWorked   = val;
+                this.#salary        = this.#hoursWorked * this.#amountperHour;
+            }
+
+            set setamountperhour(val){
+                this.#amountperHour = val;
+                this.#salary        = this.#hoursWorked * this.#amountperHour;
+            }
+
+            set setsalary(val){
+                this.#salary        = this.#hoursWorked * this.#amountperHour;
+            }
+
+            // getters
+            get displayfirstName(){
+                console.log("The Employee First name: " + this.#firstname);
+            }
+
+            get displaylastName(){
+                console.log("The Employee Last name: " + this.#lastname);   
+            }
+
+            get displayDepartment(){
+                console.log("The Employee Department: " + this.#department);  
+            }
+
+            get displayhoursWorked(){
+                console.log("The Employee Hours Worked: " + this.#hoursWorked);
+            }
+
+            get displayamountperHour(){
+                console.log("The Employee Amount to be paid per Hour: " + this.#amountperHour);
+            }
+
+            get displaySalary(){
+                console.log("The Employee Salary: " + this.#salary);
+                
+            }
+
+    }
+            //Creating an object from the Employee class
+            let emp1 = new Employee('Martin','Maina','Software', 88, 10000);
+            //calling out getters (functions)
+            console.log(emp1.displayfirstName);
+            console.log(emp1.displaylastName);
+            console.log(emp1.displayDepartment);
+            console.log(emp1.displayhoursWorked);
+            console.log(emp1.displayamountperHour);
+            console.log(emp1.displaySalary);
+
+
+            //class creation - derived class
+            //inheritance principle of OOP
+            class fulltimeEmployee extends Employee{
+                    //Properties
+                    #timeWorked;
+                    #compensationperHour;
+                    #wages;
+
+            constructor(firstname, lastname, department, timeWorked, compensationperHour){
+                super(firstname, lastname, department);
+                this.#timeWorked           = timeWorked;
+                this.#compensationperHour  = compensationperHour;
+                this.#wages                = this.#timeWorked * this.#compensationperHour;
+            }
+
+            //setters
+            set settimeworked (val){
+                this.#timeWorked           = val;
+                this.#wages                = this.#timeWorked * this.#compensationperHour;
+            }
+
+            set setcompensationperHour (val){
+                this.#compensationperHour  = val;
+                this.#wages                = this.#timeWorked * this.#compensationperHour;
+            }
+
+            set setwages(val){
+                this.#wages                = this.#timeWorked * this.#compensationperHour;
+            }
+
+
+            //getters
+            get displaytimeWorked(){
+                console.log("The Full-time Employee Hours Worked: " + this.#timeWorked);
+            }
+
+            get displaycompensationperHour(){
+                console.log("The Full-time Employee Compensation per hour: " + this.#compensationperHour);
+            }
+
+            get displayWages(){
+                console.log("The Full-time Employee Wages: " + this.#wages);
+                }
+    }
+
+            //creating an object from the full-time employee class
+            let ftemp1 = new fulltimeEmployee ('Stella','Maina','Finance', 99, 10000);
+
+            //calling the getters (functions)
+            console.log(ftemp1.displayfirstName);
+            console.log(ftemp1.displaylastName);
+            console.log(ftemp1.displayDepartment);
+            console.log(ftemp1.displaytimeWorked);
+            console.log(ftemp1.displaycompensationperHour);
+            console.log(ftemp1.displayWages);
+
+            //class creation - derived class
+            //inheritance principle of OOP
+            class parttimeEmployee extends fulltimeEmployee{
+                    #periodWorked;
+                    #renumerationperHour;
+                    #income;
+                    constructor(firstname, lastname, department, periodWorked, renumerationperHour){
+                        super(firstname, lastname, department);
+                        this.#periodWorked        = periodWorked;
+                        this.#renumerationperHour = renumerationperHour;
+                        this.#income              = this.#periodWorked * this.#renumerationperHour;
+                    }
+                    set setperiodworked (val){
+                        this.#periodWorked        = val;
+                        this.#income              = this.#periodWorked * this.#renumerationperHour;
+                    }
+
+                    set setperiodworked (val){
+                        this.#renumerationperHour = val;
+                        this.#income              = this.#periodWorked * this.#renumerationperHour;
+                    }
+
+                    set setincome (val){
+                        this.#income              = this.#periodWorked * this.#renumerationperHour;
+                    }
+
+                    get displayperiodWorked(){
+                        console.log("The Part-time Employee Hours Worked: "          + this.#periodWorked);
+                    }
+
+                    get displayrenumerationperHour(){
+                        console.log("The Part-time Employee Renumeration per hour: " + this.#renumerationperHour);     
+                    }
+
+                    get displayIncome(){
+                        console.log("The Part-time Employee Income: "                + this.#income); 
+
+                    }
+
+            }  
+                    //creating an object out of the part-time employee class
+                    let ptemp1 = new parttimeEmployee('Faith','Maina','Marketing', 44, 20000);
+                    //calling out getters (function)
+                    console.log(ptemp1.displayfirstName);
+                    console.log(ptemp1.displaylastName);
+                    console.log(ptemp1.displayDepartment);
+                    console.log(ptemp1.displayperiodWorked);
+                    console.log(ptemp1.displayrenumerationperHour);
+                    console.log(ptemp1.displayIncome);
+                    
+</script>
+
+    
+</body>
+</html>
