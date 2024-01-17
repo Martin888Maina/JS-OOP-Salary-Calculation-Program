@@ -6,6 +6,7 @@ Welcome to the JavaScript Object-Oriented Programming project! This project demo
 - [Introduction](#introduction)
 - [How to Use](#how-to-use)
 - [Classes and Inheritance](#classes-and-inheritance)
+- [License](#license)
 
 
 ## Introduction
@@ -56,4 +57,8 @@ This JavaScript project illustrates the implementation of OOP principles to mode
 
 - Methods:
   - Setters and getters for properties
+ 
+## License
+
+This project is licensed under the [MIT License](LICENSE). Feel free to use, modify, and distribute it according to the terms of the license.
 
