@@ -1,64 +1,168 @@
-# JavaScript Object-Oriented Programming
+# Employee Salary Calculator
 
-Welcome to the JavaScript Object-Oriented Programming project! This project demonstrates the principles of object-oriented programming (OOP) by implementing a program to calculate employee salaries. It includes a base class (Employee) and two derived classes (Full-time Employee and Part-time Employee).
+A modern, interactive web application that demonstrates Object-Oriented Programming principles in JavaScript through an employee salary calculation system. The application features a clean, responsive interface and implements class inheritance with three employee types: Regular, Full-Time, and Part-Time employees.
 
 ## Table of Contents
-- [Introduction](#introduction)
-- [How to Use](#how-to-use)
-- [Classes and Inheritance](#classes-and-inheritance)
+
+- [Overview](#overview)
+- [Features](#features)
+- [Technologies Used](#technologies-used)
+- [Getting Started](#getting-started)
+- [Project Structure](#project-structure)
+- [OOP Concepts Demonstrated](#oop-concepts-demonstrated)
+- [Usage](#usage)
+- [Browser Support](#browser-support)
 - [License](#license)
+- [Author](#author)
 
+## Overview
 
-## Introduction
+This project showcases core Object-Oriented Programming concepts including encapsulation, inheritance, and polymorphism through a practical salary calculation application. The application allows users to input employee details and automatically calculates compensation based on hours worked and hourly rates.
 
-This JavaScript project illustrates the implementation of OOP principles to model an employee system. It defines classes with encapsulated properties and methods for calculating and displaying employee details such as name, department, hours worked, and salary.
+## Features
 
-## How to Use
+- **Interactive User Interface**: Modern, responsive design that works seamlessly across all devices
+- **Three Employee Types**: Support for Regular, Full-Time, and Part-Time employee classifications
+- **Real-Time Calculations**: Instant salary computation as users input employee data
+- **Data Encapsulation**: Private class fields ensure data integrity and security
+- **Class Inheritance**: Demonstrates multi-level inheritance with base and derived classes
+- **Responsive Design**: Optimized for desktop, tablet, and mobile viewing
+- **Smooth Animations**: Professional transitions and hover effects for enhanced user experience
+- **Input Validation**: Form validation to ensure accurate data entry
 
-1. Open the HTML file in a web browser.
+## Technologies Used
 
-2. The program defines three classes: `Employee`, `Full-timeEmployee`, and `Part-timeEmployee`.
+- **HTML5**: Semantic markup for structure and accessibility
+- **CSS3**: Modern styling with custom properties, flexbox, and grid layouts
+- **JavaScript (ES6+)**: Object-oriented programming with classes and private fields
+- **Google Fonts**: Inter font family for clean, professional typography
 
-3. Objects (`emp1`, `ftemp1`, `ptemp1`) are created from these classes, showcasing the inheritance hierarchy.
+## Getting Started
 
-4. The program calculates and displays employee details based on the provided data.
+### Prerequisites
 
-## Classes and Inheritance
+No special prerequisites are required. You only need a modern web browser to run this application.
 
-### Employee (Base Class)
+### Installation
 
-- Properties:
-  - First Name
-  - Last Name
-  - Department
-  - Hours Worked
-  - Amount per Hour
-  - Salary
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Martin888Maina/JS-OOP-Salary-Calculation-Program.git
+   ```
 
-- Methods:
-  - Setters and getters for properties
+2. Navigate to the project directory:
+   ```bash
+   cd JS-OOP-Salary-Calculation-Program
+   ```
 
-### Full-timeEmployee (Derived Class)
+3. Open `index.html` in your web browser:
+   ```bash
+   # Windows
+   start index.html
+   
+   # macOS
+   open index.html
+   
+   # Linux
+   xdg-open index.html
+   ```
 
-- Properties:
-  - Time Worked
-  - Compensation per Hour
-  - Wages
+Alternatively, you can use a local development server like Live Server in VS Code for a better development experience.
 
-- Methods:
-  - Setters and getters for properties
+## Project Structure
 
-### Part-timeEmployee (Derived Class)
+```
+JS-OOP-Salary-Calculation-Program/
+│
+├── index.html          # Main HTML structure
+├── styles.css          # CSS styling and animations
+├── app.js             # JavaScript OOP implementation
+├── README.md          # Project documentation
+└── LICENSE            # MIT License
+```
 
-- Properties:
-  - Period Worked
-  - Renumeration per Hour
-  - Income
+## OOP Concepts Demonstrated
 
-- Methods:
-  - Setters and getters for properties
- 
+### Encapsulation
+
+The project uses JavaScript private fields (denoted by `#`) to encapsulate employee data, preventing direct access from outside the class:
+
+```javascript
+class Employee {
+    #firstname;
+    #lastname;
+    #salary;
+    // ... getters and setters provide controlled access
+}
+```
+
+### Inheritance
+
+The application demonstrates both single and multi-level inheritance:
+
+- `Employee` (Base Class)
+- `FullTimeEmployee extends Employee` (Derived Class)
+- `PartTimeEmployee extends FullTimeEmployee` (Multi-level Inheritance)
+
+### Polymorphism
+
+Each employee type has its own compensation calculation method while sharing common properties through inheritance.
+
+### Abstraction
+
+Complex salary calculations are abstracted into private methods, exposing only necessary public interfaces through getters and setters.
+
+## Usage
+
+### Calculating Regular Employee Salary
+
+1. Select the "Regular Employee" tab
+2. Enter employee details:
+   - First Name
+   - Last Name
+   - Department
+   - Hours Worked
+   - Rate per Hour
+3. Click "Calculate Salary"
+4. View the calculated results in the results section
+
+### Calculating Full-Time Employee Wages
+
+1. Select the "Full-Time Employee" tab
+2. Input the required information
+3. Click "Calculate Wages"
+4. Results will display the total wages based on time worked and compensation rate
+
+### Calculating Part-Time Employee Income
+
+1. Select the "Part-Time Employee" tab
+2. Fill in all fields
+3. Click "Calculate Income"
+4. The system calculates total income based on period worked and remuneration rate
+
+## Browser Support
+
+This application supports all modern browsers:
+
+- Chrome (recommended)
+- Firefox
+- Safari
+- Edge
+- Opera
+
+Note: Internet Explorer is not supported due to the use of modern JavaScript features like private class fields.
+
 ## License
 
-This project is licensed under the [MIT License](LICENSE). Feel free to use, modify, and distribute it according to the terms of the license.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
+## Author
+
+**Martin Maina**
+
+- GitHub: [@Martin888Maina](https://github.com/Martin888Maina)
+- Project Link: [JS-OOP-Salary-Calculation-Program](https://github.com/Martin888Maina/JS-OOP-Salary-Calculation-Program)
+
+---
+
+This project was created as a demonstration of Object-Oriented Programming principles in JavaScript and serves as a portfolio piece showcasing modern web development practices.
