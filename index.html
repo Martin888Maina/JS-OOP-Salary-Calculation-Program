@@ -11,6 +11,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+    <link rel="manifest" href="favicon/site.webmanifest">
+    <link rel="shortcut icon" href="favicon/favicon.ico">
 </head>
 
 <body>
@@ -55,7 +60,10 @@
                             <input type="number" id="emp-rate" placeholder="0.00" min="0" step="0.01" required>
                         </div>
                     </div>
-                    <button type="submit" class="submit-btn">Calculate Salary</button>
+                    <div class="form-actions">
+                        <button type="button" class="reset-btn" data-form="employeeForm">Clear Form</button>
+                        <button type="submit" class="submit-btn">Calculate Salary</button>
+                    </div>
                 </form>
 
                 <!-- Full-Time Employee Form -->
@@ -83,7 +91,10 @@
                             <input type="number" id="ft-rate" placeholder="0.00" min="0" step="0.01" required>
                         </div>
                     </div>
-                    <button type="submit" class="submit-btn">Calculate Wages</button>
+                    <div class="form-actions">
+                        <button type="button" class="reset-btn" data-form="fulltimeForm">Clear Form</button>
+                        <button type="submit" class="submit-btn">Calculate Wages</button>
+                    </div>
                 </form>
 
                 <!-- Part-Time Employee Form -->
@@ -111,12 +122,18 @@
                             <input type="number" id="pt-rate" placeholder="0.00" min="0" step="0.01" required>
                         </div>
                     </div>
-                    <button type="submit" class="submit-btn">Calculate Income</button>
+                    <div class="form-actions">
+                        <button type="button" class="reset-btn" data-form="parttimeForm">Clear Form</button>
+                        <button type="submit" class="submit-btn">Calculate Income</button>
+                    </div>
                 </form>
             </div>
 
             <div class="results-section" id="resultsSection">
-                <h2 class="results-title">Calculation Results</h2>
+                <div class="results-header">
+                    <h2 class="results-title">Calculation Results</h2>
+                    <button type="button" class="clear-results-btn" id="clearResultsBtn">Clear Results</button>
+                </div>
                 <div id="resultsContainer" class="results-container">
                     <div class="empty-state">
                         <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

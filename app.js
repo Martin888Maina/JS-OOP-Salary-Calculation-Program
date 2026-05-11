@@ -176,6 +176,14 @@ class UIController {
             btn.addEventListener('click', (e) => this.switchEmployeeType(e.target.dataset.type));
         });
 
+        // Reset buttons
+        document.querySelectorAll('.reset-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.clearForm(btn.dataset.form));
+        });
+
+        // Clear all results
+        document.getElementById('clearResultsBtn').addEventListener('click', () => this.clearResults());
+
         // Form submissions
         document.getElementById('employeeForm').addEventListener('submit', (e) => {
             e.preventDefault();
@@ -351,6 +359,19 @@ class UIController {
     // Clear form after successful submission
     clearForm(formId) {
         document.getElementById(formId).reset();
+    }
+
+    // Remove all result cards and restore empty state
+    clearResults() {
+        const container = document.getElementById('resultsContainer');
+        container.innerHTML = `
+            <div class="empty-state">
+                <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+                </svg>
+                <p>No calculations yet. Fill out the form above to get started.</p>
+            </div>
+        `;
     }
 }
 
