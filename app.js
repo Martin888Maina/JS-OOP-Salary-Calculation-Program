@@ -1,7 +1,8 @@
-// Base Employee class using OOP principles
-// This class serves as the foundation for all employee types
+/**
+ * Base class representing an employee with private field encapsulation
+ * and a computed salary derived from hours worked and hourly rate.
+ */
 class Employee {
-    // Private fields ensure data encapsulation
     #firstname;
     #lastname;
     #department;
@@ -18,24 +19,18 @@ class Employee {
         this.#salary = this.#calculateSalary();
     }
 
-    // Calculate salary based on hours and rate
+    /**
+     * @returns {number} Product of hours worked and the hourly rate.
+     */
     #calculateSalary() {
         return this.#hoursWorked * this.#amountperHour;
     }
 
-    // Setters with automatic salary recalculation
-    set firstname(val) {
-        this.#firstname = val;
-    }
+    set firstname(val) { this.#firstname = val; }
+    set lastname(val) { this.#lastname = val; }
+    set department(val) { this.#department = val; }
 
-    set lastname(val) {
-        this.#lastname = val;
-    }
-
-    set department(val) {
-        this.#department = val;
-    }
-
+    // Updating either input recalculates the stored salary immediately.
     set hoursWorked(val) {
         this.#hoursWorked = val;
         this.#salary = this.#calculateSalary();
@@ -46,39 +41,25 @@ class Employee {
         this.#salary = this.#calculateSalary();
     }
 
-    // Getters to access private fields
-    get firstname() {
-        return this.#firstname;
-    }
+    get firstname() { return this.#firstname; }
+    get lastname() { return this.#lastname; }
+    get department() { return this.#department; }
+    get hoursWorked() { return this.#hoursWorked; }
+    get amountperHour() { return this.#amountperHour; }
+    get salary() { return this.#salary; }
 
-    get lastname() {
-        return this.#lastname;
-    }
-
-    get department() {
-        return this.#department;
-    }
-
-    get hoursWorked() {
-        return this.#hoursWorked;
-    }
-
-    get amountperHour() {
-        return this.#amountperHour;
-    }
-
-    get salary() {
-        return this.#salary;
-    }
-
-    // Get full name as a single string
+    /**
+     * @returns {string} First and last name joined with a space.
+     */
     get fullName() {
         return `${this.#firstname} ${this.#lastname}`;
     }
 }
 
-// FullTimeEmployee class extends Employee
-// Demonstrates inheritance in OOP
+/**
+ * Extends Employee with a separate wages calculation for full-time contracted hours.
+ * Wages are independent of the base salary inherited from Employee.
+ */
 class FullTimeEmployee extends Employee {
     #timeWorked;
     #compensationperHour;
@@ -91,11 +72,14 @@ class FullTimeEmployee extends Employee {
         this.#wages = this.#calculateWages();
     }
 
-    // Calculate total wages
+    /**
+     * @returns {number} Product of time worked and the compensation rate.
+     */
     #calculateWages() {
         return this.#timeWorked * this.#compensationperHour;
     }
 
+    // Updating either input recalculates the stored wages immediately.
     set timeWorked(val) {
         this.#timeWorked = val;
         this.#wages = this.#calculateWages();
@@ -106,21 +90,15 @@ class FullTimeEmployee extends Employee {
         this.#wages = this.#calculateWages();
     }
 
-    get timeWorked() {
-        return this.#timeWorked;
-    }
-
-    get compensationperHour() {
-        return this.#compensationperHour;
-    }
-
-    get wages() {
-        return this.#wages;
-    }
+    get timeWorked() { return this.#timeWorked; }
+    get compensationperHour() { return this.#compensationperHour; }
+    get wages() { return this.#wages; }
 }
 
-// PartTimeEmployee extends FullTimeEmployee
-// Shows multi-level inheritance
+/**
+ * Extends FullTimeEmployee with a part-time income calculation
+ * using a separate period and remuneration rate.
+ */
 class PartTimeEmployee extends FullTimeEmployee {
     #periodWorked;
     #remunerationperHour;
@@ -133,11 +111,14 @@ class PartTimeEmployee extends FullTimeEmployee {
         this.#income = this.#calculateIncome();
     }
 
-    // Calculate total income for part-time work
+    /**
+     * @returns {number} Product of period worked and the remuneration rate.
+     */
     #calculateIncome() {
         return this.#periodWorked * this.#remunerationperHour;
     }
 
+    // Updating either input recalculates the stored income immediately.
     set periodWorked(val) {
         this.#periodWorked = val;
         this.#income = this.#calculateIncome();
@@ -148,43 +129,35 @@ class PartTimeEmployee extends FullTimeEmployee {
         this.#income = this.#calculateIncome();
     }
 
-    get periodWorked() {
-        return this.#periodWorked;
-    }
-
-    get remunerationperHour() {
-        return this.#remunerationperHour;
-    }
-
-    get income() {
-        return this.#income;
-    }
+    get periodWorked() { return this.#periodWorked; }
+    get remunerationperHour() { return this.#remunerationperHour; }
+    get income() { return this.#income; }
 }
 
-// UI Controller - handles all user interactions
+/**
+ * Manages form interactions, employee type switching, and result rendering.
+ * A single instance is created on DOMContentLoaded.
+ */
 class UIController {
     constructor() {
         this.currentType = 'employee';
         this.initializeEventListeners();
     }
 
-    // Set up all event listeners when page loads
+    /**
+     * Attaches all DOM event listeners. Called once on construction.
+     */
     initializeEventListeners() {
-        // Tab switching for employee types
-        const typeButtons = document.querySelectorAll('.type-btn');
-        typeButtons.forEach(btn => {
+        document.querySelectorAll('.type-btn').forEach(btn => {
             btn.addEventListener('click', (e) => this.switchEmployeeType(e.target.dataset.type));
         });
 
-        // Reset buttons
         document.querySelectorAll('.reset-btn').forEach(btn => {
             btn.addEventListener('click', () => this.clearForm(btn.dataset.form));
         });
 
-        // Clear all results
         document.getElementById('clearResultsBtn').addEventListener('click', () => this.clearResults());
 
-        // Form submissions
         document.getElementById('employeeForm').addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleEmployeeSubmit();
@@ -201,23 +174,26 @@ class UIController {
         });
     }
 
-    // Switch between different employee type forms
+    /**
+     * Activates the selected employee type tab and its corresponding form.
+     * @param {string} type - One of 'employee', 'fulltime', or 'parttime'.
+     */
     switchEmployeeType(type) {
         this.currentType = type;
 
-        // Update active button
         document.querySelectorAll('.type-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.type === type);
         });
 
-        // Show the correct form
         document.querySelectorAll('.calculator-form').forEach(form => {
             form.classList.remove('active');
         });
         document.getElementById(`${type}Form`).classList.add('active');
     }
 
-    // Handle regular employee form submission
+    /**
+     * Reads the regular employee form, constructs an Employee instance, and renders the result.
+     */
     handleEmployeeSubmit() {
         const firstname = document.getElementById('emp-firstname').value;
         const lastname = document.getElementById('emp-lastname').value;
@@ -230,7 +206,9 @@ class UIController {
         this.clearForm('employeeForm');
     }
 
-    // Handle full-time employee form submission
+    /**
+     * Reads the full-time employee form, constructs a FullTimeEmployee instance, and renders the result.
+     */
     handleFullTimeSubmit() {
         const firstname = document.getElementById('ft-firstname').value;
         const lastname = document.getElementById('ft-lastname').value;
@@ -243,7 +221,9 @@ class UIController {
         this.clearForm('fulltimeForm');
     }
 
-    // Handle part-time employee form submission
+    /**
+     * Reads the part-time employee form, constructs a PartTimeEmployee instance, and renders the result.
+     */
     handlePartTimeSubmit() {
         const firstname = document.getElementById('pt-firstname').value;
         const lastname = document.getElementById('pt-lastname').value;
@@ -256,25 +236,32 @@ class UIController {
         this.clearForm('parttimeForm');
     }
 
-    // Display calculation results in the results section
+    /**
+     * Removes the empty-state placeholder if present, appends a result card,
+     * and scrolls the results section into view.
+     * @param {Employee|FullTimeEmployee|PartTimeEmployee} employee
+     * @param {string} type - One of 'employee', 'fulltime', or 'parttime'.
+     */
     displayResult(employee, type) {
         const resultsContainer = document.getElementById('resultsContainer');
-        
-        // Remove empty state if present
+
         const emptyState = resultsContainer.querySelector('.empty-state');
         if (emptyState) {
             emptyState.remove();
         }
 
-        // Create result card
         const resultCard = this.createResultCard(employee, type);
         resultsContainer.insertAdjacentHTML('beforeend', resultCard);
 
-        // Smooth scroll to results
         document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
-    // Create HTML for result card based on employee type
+    /**
+     * Builds and returns the HTML markup for a result card.
+     * @param {Employee|FullTimeEmployee|PartTimeEmployee} employee
+     * @param {string} type - One of 'employee', 'fulltime', or 'parttime'.
+     * @returns {string} HTML string ready for insertion into the DOM.
+     */
     createResultCard(employee, type) {
         const typeLabels = {
             'employee': 'Regular',
@@ -356,12 +343,16 @@ class UIController {
         `;
     }
 
-    // Clear form after successful submission
+    /**
+     * @param {string} formId - The id attribute of the form element to reset.
+     */
     clearForm(formId) {
         document.getElementById(formId).reset();
     }
 
-    // Remove all result cards and restore empty state
+    /**
+     * Replaces all result cards with the empty-state placeholder markup.
+     */
     clearResults() {
         const container = document.getElementById('resultsContainer');
         container.innerHTML = `
@@ -375,7 +366,7 @@ class UIController {
     }
 }
 
-// Initialize the application when DOM is ready
+// Defers instantiation until the DOM is fully parsed.
 document.addEventListener('DOMContentLoaded', () => {
     new UIController();
 });
