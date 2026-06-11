@@ -135,6 +135,66 @@ class PartTimeEmployee extends FullTimeEmployee {
 }
 
 /**
+ * Represents a gross salary built from basic pay plus taxable allowances
+ * and benefits, expressed in Kenyan Shillings (KES). Mirrors the Employee
+ * encapsulation style: private fields with a recomputed total on update.
+ */
+class GrossSalary {
+    #basicSalary;
+    #allowances;
+    #otherTaxableBenefits;
+    #gross;
+
+    constructor(basicSalary, allowances, otherTaxableBenefits) {
+        this.#basicSalary = basicSalary;
+        this.#allowances = allowances;
+        this.#otherTaxableBenefits = otherTaxableBenefits;
+        this.#gross = this.#calculateGross();
+    }
+
+    /**
+     * @returns {number} Sum of basic salary, allowances, and other taxable benefits.
+     */
+    #calculateGross() {
+        return this.#basicSalary + this.#allowances + this.#otherTaxableBenefits;
+    }
+
+    // Updating any component recalculates the stored gross immediately.
+    set basicSalary(val) {
+        this.#basicSalary = val;
+        this.#gross = this.#calculateGross();
+    }
+
+    set allowances(val) {
+        this.#allowances = val;
+        this.#gross = this.#calculateGross();
+    }
+
+    set otherTaxableBenefits(val) {
+        this.#otherTaxableBenefits = val;
+        this.#gross = this.#calculateGross();
+    }
+
+    get basicSalary() { return this.#basicSalary; }
+    get allowances() { return this.#allowances; }
+    get otherTaxableBenefits() { return this.#otherTaxableBenefits; }
+    get gross() { return this.#gross; }
+}
+
+/**
+ * Formats a numeric amount as Kenyan Shillings with thousands separators
+ * and two decimal places, e.g. 60000 -> "Ksh 60,000.00".
+ * @param {number} value - The amount to format.
+ * @returns {string} The formatted KES string.
+ */
+function formatKES(value) {
+    return 'Ksh ' + value.toLocaleString('en-KE', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+/**
  * Manages form interactions, employee type switching, and result rendering.
  * A single instance is created on DOMContentLoaded.
  */
@@ -171,6 +231,11 @@ class UIController {
         document.getElementById('parttimeForm').addEventListener('submit', (e) => {
             e.preventDefault();
             this.handlePartTimeSubmit();
+        });
+
+        document.getElementById('grossForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleGrossSubmit();
         });
     }
 
@@ -237,6 +302,24 @@ class UIController {
     }
 
     /**
+     * Reads the gross salary form, validates the basic figure, constructs a
+     * GrossSalary instance, and renders the result. All amounts are in KES.
+     */
+    handleGrossSubmit() {
+        const basic = parseFloat(document.getElementById('gross-basic').value);
+        const allowances = parseFloat(document.getElementById('gross-allowances').value) || 0;
+        const benefits = parseFloat(document.getElementById('gross-benefits').value) || 0;
+
+        if (isNaN(basic) || basic < 0) {
+            return;
+        }
+
+        const grossSalary = new GrossSalary(basic, allowances, benefits);
+        this.displayResult(grossSalary, 'gross');
+        this.clearForm('grossForm');
+    }
+
+    /**
      * Removes the empty-state placeholder if present, appends a result card,
      * and scrolls the results section into view.
      * @param {Employee|FullTimeEmployee|PartTimeEmployee} employee
@@ -266,7 +349,8 @@ class UIController {
         const typeLabels = {
             'employee': 'Regular',
             'fulltime': 'Full-Time',
-            'parttime': 'Part-Time'
+            'parttime': 'Part-Time',
+            'gross': 'Gross'
         };
 
         let detailsHTML = '';
@@ -324,19 +408,43 @@ class UIController {
                     <span class="detail-value">$${employee.remunerationperHour.toFixed(2)}</span>
                 </div>
             `;
+        } else if (type === 'gross') {
+            totalLabel = 'Total Gross Salary';
+            totalValue = employee.gross;
+            detailsHTML = `
+                <div class="detail-row">
+                    <span class="detail-label">Basic Salary:</span>
+                    <span class="detail-value">${formatKES(employee.basicSalary)}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Allowances:</span>
+                    <span class="detail-value">${formatKES(employee.allowances)}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Other Taxable Benefits:</span>
+                    <span class="detail-value">${formatKES(employee.otherTaxableBenefits)}</span>
+                </div>
+            `;
         }
+
+        // Gross results carry no employee name; the other types use the full name.
+        const cardTitle = type === 'gross' ? 'Gross Salary' : employee.fullName;
+        // Gross is reported in KES; the hourly-based types stay in USD.
+        const totalDisplay = type === 'gross'
+            ? formatKES(totalValue)
+            : `$${totalValue.toFixed(2)}`;
 
         return `
             <div class="result-card">
                 <div class="result-header">
-                    <h3 class="employee-name">${employee.fullName}</h3>
+                    <h3 class="employee-name">${cardTitle}</h3>
                     <span class="employee-badge badge-${type}">${typeLabels[type]}</span>
                 </div>
                 <div class="result-details">
                     ${detailsHTML}
                     <div class="detail-row total-row">
                         <span class="detail-label">${totalLabel}:</span>
-                        <span class="detail-value">$${totalValue.toFixed(2)}</span>
+                        <span class="detail-value">${totalDisplay}</span>
                     </div>
                 </div>
             </div>

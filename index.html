@@ -33,6 +33,7 @@
                     <button class="type-btn active" data-type="employee">Regular Employee</button>
                     <button class="type-btn" data-type="fulltime">Full-Time Employee</button>
                     <button class="type-btn" data-type="parttime">Part-Time Employee</button>
+                    <button class="type-btn" data-type="gross">Gross Salary</button>
                 </div>
 
                 <!-- Regular Employee Form -->
@@ -125,6 +126,29 @@
                     <div class="form-actions">
                         <button type="button" class="reset-btn" data-form="parttimeForm">Clear Form</button>
                         <button type="submit" class="submit-btn">Calculate Income</button>
+                    </div>
+                </form>
+
+                <!-- Gross Salary Form -->
+                <form id="grossForm" class="calculator-form">
+                    <h2 class="form-title">Gross Salary Details</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="gross-basic">Basic Salary (KES)</label>
+                            <input type="number" id="gross-basic" placeholder="0.00" min="0" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="gross-allowances">Allowances (KES)</label>
+                            <input type="number" id="gross-allowances" placeholder="0.00" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="gross-benefits">Other Taxable Benefits (KES)</label>
+                            <input type="number" id="gross-benefits" placeholder="0.00" min="0" step="0.01">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="reset-btn" data-form="grossForm">Clear Form</button>
+                        <button type="submit" class="submit-btn">Calculate Gross Salary</button>
                     </div>
                 </form>
             </div>
