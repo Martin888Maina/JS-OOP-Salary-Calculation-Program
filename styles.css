@@ -410,6 +410,152 @@ body {
     color: var(--secondary-dark);
 }
 
+.badge-net {
+    background: rgba(232, 93, 4, 0.15);
+    color: var(--primary-dark);
+}
+
+/* Collapsible Sections */
+.collapsible {
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.collapsible-header {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: var(--background);
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    transition: color 0.2s ease;
+}
+
+.collapsible-header:hover {
+    color: var(--primary-color);
+}
+
+.collapsible-header .chevron {
+    transition: transform 0.3s ease;
+}
+
+.collapsible-header[aria-expanded="true"] .chevron {
+    transform: rotate(180deg);
+}
+
+.collapsible-body {
+    display: grid;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+}
+
+@media (min-width: 640px) {
+    .collapsible-body {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.collapsible-body.collapsed {
+    display: none;
+}
+
+.form-group.checkbox-group {
+    flex-direction: row;
+    align-items: center;
+}
+
+.form-group.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    cursor: pointer;
+}
+
+.form-group.checkbox-group input {
+    width: auto;
+    padding: 0;
+    border: none;
+    accent-color: var(--primary-color);
+}
+
+/* Net Salary Breakdown Tables */
+.breakdown-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: var(--spacing-sm);
+    font-size: 0.9rem;
+}
+
+.breakdown-table caption {
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: var(--spacing-md) 0 var(--spacing-xs);
+}
+
+.breakdown-table th,
+.breakdown-table td {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-bottom: 1px solid var(--border-color);
+    text-align: left;
+}
+
+.breakdown-table th:nth-child(n+2),
+.breakdown-table td:nth-child(n+2) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.breakdown-table thead th {
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.breakdown-table .deduction-row td {
+    color: var(--text-secondary);
+}
+
+.breakdown-table .relief-row td:nth-child(n+2) {
+    color: var(--secondary-dark);
+}
+
+.breakdown-table .net-row td {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--text-primary);
+    border-top: 2px solid var(--border-color);
+    border-bottom: none;
+}
+
+.breakdown-table .net-row td:nth-child(n+2) {
+    color: var(--secondary-dark);
+}
+
+.breakdown-table .takehome-row td:nth-child(n+2) {
+    color: var(--primary-dark);
+}
+
+.net-warning {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--radius-sm);
+    background: rgba(217, 83, 79, 0.08);
+    color: #d9534f;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
 .result-details {
     display: grid;
     gap: var(--spacing-sm);

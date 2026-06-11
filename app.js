@@ -195,6 +195,188 @@ function formatKES(value) {
 }
 
 /**
+ * Statutory rates and tax bands for Kenya FY 2025/2026 (updated Feb 2025).
+ * Single source of truth — the calculator reads every constant from here so a
+ * statutory change is a config edit, never a formula edit. All amounts in KES.
+ */
+const RATES = {
+    personalRelief: 2400,
+    nssf: { rate: 0.06, tier1Limit: 8000, tier2Upper: 72000 },
+    shifRate: 0.0275,
+    housingLevyRate: 0.015,
+    insReliefRate: 0.15,
+    insReliefCap: 5000,
+    mortgageCap: 30000,
+    pwdExemption: 150000,
+    bands: [
+        { lower: 0, upper: 24000, rate: 0.10 },
+        { lower: 24000, upper: 32333, rate: 0.25 },
+        { lower: 32333, upper: 500000, rate: 0.30 },
+        { lower: 500000, upper: 800000, rate: 0.325 },
+        { lower: 800000, upper: Infinity, rate: 0.35 }
+    ]
+};
+
+/**
+ * Pure payroll engine: turns a set of salary inputs into a full breakdown of
+ * statutory deductions and net pay using the Kenya FY 2025/2026 rules. Holds
+ * inputs and every computed line in private fields, in the Employee style.
+ */
+class NetSalaryCalculator {
+    #input;
+    #gross;
+    #nssf;
+    #shif;
+    #ahl;
+    #taxableIncome;
+    #grossPaye;
+    #insuranceRelief;
+    #netPaye;
+    #netPay;
+    #voluntary;
+    #takeHome;
+    #employer;
+
+    constructor(input) {
+        this.#input = input;
+        this.#compute();
+    }
+
+    /**
+     * @returns {number} Value rounded to two decimal places.
+     */
+    #round(value) {
+        return Math.round(value * 100) / 100;
+    }
+
+    /**
+     * Two-tier NSSF: 6% of pay up to the Tier I limit, plus 6% of pay between
+     * the Tier I and Tier II limits. Capped at KES 4,320.
+     * @param {number} pensionablePay
+     * @returns {number} Total NSSF contribution.
+     */
+    #tieredNSSF(pensionablePay) {
+        const tier1 = this.#round(Math.min(pensionablePay, RATES.nssf.tier1Limit) * RATES.nssf.rate);
+        const tier2Base = Math.min(
+            Math.max(pensionablePay - RATES.nssf.tier1Limit, 0),
+            RATES.nssf.tier2Upper - RATES.nssf.tier1Limit
+        );
+        const tier2 = this.#round(tier2Base * RATES.nssf.rate);
+        return this.#round(tier1 + tier2);
+    }
+
+    /**
+     * Applies the progressive PAYE bands so each slice of income is taxed at
+     * its own band's rate.
+     * @param {number} taxable - Taxable income.
+     * @returns {number} Gross PAYE before relief.
+     */
+    #applyBands(taxable) {
+        let tax = 0;
+        for (const band of RATES.bands) {
+            if (taxable > band.lower) {
+                const slice = Math.min(taxable, band.upper) - band.lower;
+                tax += slice * band.rate;
+            } else {
+                break;
+            }
+        }
+        return this.#round(tax);
+    }
+
+    /**
+     * Runs the canonical calculation order: gross -> statutory deductions ->
+     * taxable income -> PAYE -> net pay -> voluntary deductions -> take-home,
+     * plus the employer cost-to-company figures.
+     */
+    #compute() {
+        const i = this.#input;
+        const gross = i.basic + i.allowances + i.otherBenefits
+            + i.houseAllowance + i.transportAllowance + i.otherAllowance;
+
+        const nssf = this.#tieredNSSF(gross);
+        const shif = this.#round(gross * RATES.shifRate);
+        const ahl = this.#round(gross * RATES.housingLevyRate);
+
+        const mortgage = Math.min(i.mortgageInterest, RATES.mortgageCap);
+        const allowable = nssf + shif + ahl + mortgage;
+
+        let taxable = Math.max(0, gross - allowable);
+        if (i.isPWD) {
+            taxable = Math.max(0, taxable - RATES.pwdExemption);
+        }
+        taxable = this.#round(taxable);
+
+        const grossPaye = this.#applyBands(taxable);
+        const insuranceRelief = this.#round(
+            Math.min(RATES.insReliefRate * (i.healthInsurance + i.lifeInsurance), RATES.insReliefCap)
+        );
+        const netPaye = this.#round(Math.max(0, grossPaye - RATES.personalRelief - insuranceRelief));
+
+        const netPay = this.#round(gross - nssf - shif - ahl - netPaye);
+
+        const voluntary = this.#round(
+            i.helb + i.sacco + i.pensionTopUp + i.insurance + i.childCare + i.commuter
+        );
+        const takeHome = this.#round(netPay - voluntary);
+
+        const employerNssf = this.#tieredNSSF(gross);
+
+        this.#gross = gross;
+        this.#nssf = nssf;
+        this.#shif = shif;
+        this.#ahl = ahl;
+        this.#taxableIncome = taxable;
+        this.#grossPaye = grossPaye;
+        this.#insuranceRelief = insuranceRelief;
+        this.#netPaye = netPaye;
+        this.#netPay = netPay;
+        this.#voluntary = voluntary;
+        this.#takeHome = takeHome;
+        this.#employer = {
+            nssf: employerNssf,
+            shif: shif,
+            ahl: ahl,
+            costToCompany: this.#round(gross + employerNssf + shif + ahl)
+        };
+    }
+
+    get netPay() { return this.#netPay; }
+    get takeHome() { return this.#takeHome; }
+
+    /**
+     * @returns {object} Every computed line (monthly KES), the voluntary
+     * breakdown, and the employer cost-to-company figures. Annual = monthly x 12.
+     */
+    getBreakdown() {
+        const i = this.#input;
+        return {
+            gross: this.#gross,
+            nssf: this.#nssf,
+            shif: this.#shif,
+            ahl: this.#ahl,
+            taxableIncome: this.#taxableIncome,
+            grossPaye: this.#grossPaye,
+            personalRelief: RATES.personalRelief,
+            insuranceRelief: this.#insuranceRelief,
+            netPaye: this.#netPaye,
+            netPay: this.#netPay,
+            totalVoluntary: this.#voluntary,
+            takeHome: this.#takeHome,
+            voluntaryItems: {
+                'HELB Loan': i.helb,
+                'SACCO Contribution': i.sacco,
+                'Pension Top-Up': i.pensionTopUp,
+                'Insurance Premium': i.insurance,
+                'Child Care': i.childCare,
+                'Commuter Allowance': i.commuter
+            },
+            employer: this.#employer
+        };
+    }
+}
+
+/**
  * Manages form interactions, employee type switching, and result rendering.
  * A single instance is created on DOMContentLoaded.
  */
@@ -237,6 +419,25 @@ class UIController {
             e.preventDefault();
             this.handleGrossSubmit();
         });
+
+        document.getElementById('netForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleNetSubmit();
+        });
+
+        document.querySelectorAll('.collapsible-header').forEach(header => {
+            header.addEventListener('click', () => this.toggleCollapsible(header));
+        });
+    }
+
+    /**
+     * Toggles a collapsible section open/closed and keeps aria-expanded in sync.
+     * @param {HTMLElement} header - The collapsible header button.
+     */
+    toggleCollapsible(header) {
+        const expanded = header.getAttribute('aria-expanded') === 'true';
+        header.setAttribute('aria-expanded', String(!expanded));
+        header.nextElementSibling.classList.toggle('collapsed');
     }
 
     /**
@@ -317,6 +518,124 @@ class UIController {
         const grossSalary = new GrossSalary(basic, allowances, benefits);
         this.displayResult(grossSalary, 'gross');
         this.clearForm('grossForm');
+    }
+
+    /**
+     * Reads the net salary form, validates the gross figure, builds a
+     * NetSalaryCalculator, and renders the breakdown. Amounts are in KES.
+     * Only the gross is required; every other field defaults to 0.
+     */
+    handleNetSubmit() {
+        const gross = parseFloat(document.getElementById('net-gross').value);
+        if (isNaN(gross) || gross < 0) {
+            return;
+        }
+
+        const num = (id) => parseFloat(document.getElementById(id).value) || 0;
+        const input = {
+            basic: gross,
+            allowances: num('net-allowances'),
+            otherBenefits: num('net-benefits'),
+            helb: num('net-helb'),
+            sacco: num('net-sacco'),
+            pensionTopUp: num('net-pension'),
+            insurance: num('net-insurance'),
+            childCare: num('net-childcare'),
+            commuter: num('net-commuter'),
+            houseAllowance: num('net-house'),
+            transportAllowance: num('net-transport'),
+            otherAllowance: num('net-other-allowance'),
+            mortgageInterest: num('net-mortgage'),
+            healthInsurance: num('net-health'),
+            lifeInsurance: num('net-life'),
+            isPWD: document.getElementById('net-pwd').checked
+        };
+
+        const calculator = new NetSalaryCalculator(input);
+        this.displayNetResult(calculator.getBreakdown());
+    }
+
+    /**
+     * Removes the empty-state placeholder if present, appends the net salary
+     * breakdown card, and scrolls the results section into view.
+     * @param {object} breakdown - The result of NetSalaryCalculator.getBreakdown().
+     */
+    displayNetResult(breakdown) {
+        const resultsContainer = document.getElementById('resultsContainer');
+
+        const emptyState = resultsContainer.querySelector('.empty-state');
+        if (emptyState) {
+            emptyState.remove();
+        }
+
+        resultsContainer.insertAdjacentHTML('beforeend', this.createNetResultCard(breakdown));
+        document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    /**
+     * Builds the net salary result card: a Salary Breakdown table (Monthly |
+     * Annual) with Net Pay emphasized, plus a Cost to Company table. Surfaces a
+     * non-blocking warning when voluntary deductions exceed net pay.
+     * @param {object} b - The breakdown object.
+     * @returns {string} HTML string ready for insertion into the DOM.
+     */
+    createNetResultCard(b) {
+        const row = (label, monthly, cls = '') =>
+            `<tr class="${cls}"><td>${label}</td><td>${formatKES(monthly)}</td><td>${formatKES(monthly * 12)}</td></tr>`;
+
+        let voluntaryRows = '';
+        for (const [label, amount] of Object.entries(b.voluntaryItems)) {
+            if (amount > 0) {
+                voluntaryRows += row(label, amount, 'deduction-row');
+            }
+        }
+
+        const takeHomeRow = b.totalVoluntary > 0
+            ? row('Take-Home After All Deductions', b.takeHome, 'net-row takehome-row')
+            : '';
+
+        const warning = b.totalVoluntary > b.netPay
+            ? `<div class="net-warning">Voluntary deductions exceed net pay — the take-home figure is negative. Please review the optional deductions.</div>`
+            : '';
+
+        return `
+            <div class="result-card net-result">
+                <div class="result-header">
+                    <h3 class="employee-name">Salary Breakdown</h3>
+                    <span class="employee-badge badge-net">Net Salary</span>
+                </div>
+                <table class="breakdown-table">
+                    <thead>
+                        <tr><th>Item</th><th>Monthly (KES)</th><th>Annual (KES)</th></tr>
+                    </thead>
+                    <tbody>
+                        ${row('Gross Income', b.gross)}
+                        ${row('PAYE (Income Tax)', b.netPaye, 'deduction-row')}
+                        ${row('NSSF Contribution', b.nssf, 'deduction-row')}
+                        ${row('SHIF Contribution (2.75%)', b.shif, 'deduction-row')}
+                        ${row('Housing Levy (1.5%)', b.ahl, 'deduction-row')}
+                        ${row('Personal Relief', b.personalRelief, 'relief-row')}
+                        ${row('Net Pay', b.netPay, 'net-row')}
+                        ${voluntaryRows}
+                        ${takeHomeRow}
+                    </tbody>
+                </table>
+                ${warning}
+                <table class="breakdown-table ctc-table">
+                    <caption>Cost to Company (Employer View)</caption>
+                    <thead>
+                        <tr><th>Item</th><th>Monthly (KES)</th><th>Annual (KES)</th></tr>
+                    </thead>
+                    <tbody>
+                        ${row('Gross Salary', b.gross)}
+                        ${row('Employer NSSF', b.employer.nssf, 'deduction-row')}
+                        ${row('Employer SHIF (2.75%)', b.employer.shif, 'deduction-row')}
+                        ${row('Employer Housing Levy (1.5%)', b.employer.ahl, 'deduction-row')}
+                        ${row('Total Cost to Company', b.employer.costToCompany, 'net-row')}
+                    </tbody>
+                </table>
+            </div>
+        `;
     }
 
     /**

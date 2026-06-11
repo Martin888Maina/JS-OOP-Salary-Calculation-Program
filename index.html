@@ -34,6 +34,7 @@
                     <button class="type-btn" data-type="fulltime">Full-Time Employee</button>
                     <button class="type-btn" data-type="parttime">Part-Time Employee</button>
                     <button class="type-btn" data-type="gross">Gross Salary</button>
+                    <button class="type-btn" data-type="net">Net Salary</button>
                 </div>
 
                 <!-- Regular Employee Form -->
@@ -149,6 +150,102 @@
                     <div class="form-actions">
                         <button type="button" class="reset-btn" data-form="grossForm">Clear Form</button>
                         <button type="submit" class="submit-btn">Calculate Gross Salary</button>
+                    </div>
+                </form>
+
+                <!-- Net Salary Form -->
+                <form id="netForm" class="calculator-form">
+                    <h2 class="form-title">Net Salary Details</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="net-gross">Gross Pay (KES)</label>
+                            <input type="number" id="net-gross" placeholder="0.00" min="0" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="net-allowances">Allowances (KES)</label>
+                            <input type="number" id="net-allowances" placeholder="0.00" min="0" step="0.01">
+                        </div>
+                        <div class="form-group">
+                            <label for="net-benefits">Other Taxable Benefits (KES)</label>
+                            <input type="number" id="net-benefits" placeholder="0.00" min="0" step="0.01">
+                        </div>
+                    </div>
+
+                    <div class="collapsible">
+                        <button type="button" class="collapsible-header" aria-expanded="false">
+                            <span>Optional: Voluntary Deductions</span>
+                            <span class="chevron" aria-hidden="true">&#9662;</span>
+                        </button>
+                        <div class="collapsible-body collapsed">
+                            <div class="form-group">
+                                <label for="net-helb">HELB Loan Repayment (KES)</label>
+                                <input type="number" id="net-helb" placeholder="0.00" min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label for="net-sacco">SACCO Contribution (KES)</label>
+                                <input type="number" id="net-sacco" placeholder="0.00" min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label for="net-pension">Pension Top-Up (KES)</label>
+                                <input type="number" id="net-pension" placeholder="0.00" min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label for="net-insurance">Insurance Premium (KES)</label>
+                                <input type="number" id="net-insurance" placeholder="0.00" min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label for="net-childcare">Child Care (KES)</label>
+                                <input type="number" id="net-childcare" placeholder="0.00" min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label for="net-commuter">Commuter Allowance (KES)</label>
+                                <input type="number" id="net-commuter" placeholder="0.00" min="0" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="collapsible">
+                        <button type="button" class="collapsible-header" aria-expanded="false">
+                            <span>Advanced: Allowances, Mortgage &amp; Relief</span>
+                            <span class="chevron" aria-hidden="true">&#9662;</span>
+                        </button>
+                        <div class="collapsible-body collapsed">
+                            <div class="form-group">
+                                <label for="net-house">House Allowance (KES)</label>
+                                <input type="number" id="net-house" placeholder="0.00" min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label for="net-transport">Transport Allowance (KES)</label>
+                                <input type="number" id="net-transport" placeholder="0.00" min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label for="net-other-allowance">Other Taxable Allowances (KES)</label>
+                                <input type="number" id="net-other-allowance" placeholder="0.00" min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label for="net-mortgage">Mortgage Interest (KES)</label>
+                                <input type="number" id="net-mortgage" placeholder="0.00" min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label for="net-health">Health Insurance Premium (KES)</label>
+                                <input type="number" id="net-health" placeholder="0.00" min="0" step="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label for="net-life">Life Insurance Premium (KES)</label>
+                                <input type="number" id="net-life" placeholder="0.00" min="0" step="0.01">
+                            </div>
+                            <div class="form-group checkbox-group">
+                                <label for="net-pwd">
+                                    <input type="checkbox" id="net-pwd">
+                                    Person With Disability (PWD)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="reset-btn" data-form="netForm">Clear Form</button>
+                        <button type="submit" class="submit-btn">Calculate Net Pay</button>
                     </div>
                 </form>
             </div>
