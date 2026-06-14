@@ -561,6 +561,12 @@ body {
     color: var(--primary-dark);
 }
 
+.field-error {
+    color: #d9534f;
+    font-size: 0.8rem;
+    margin-top: 4px;
+}
+
 /* Logo upload field */
 .form-group input[type="file"] {
     padding: var(--spacing-xs);

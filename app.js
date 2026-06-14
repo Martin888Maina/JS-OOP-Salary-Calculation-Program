@@ -392,6 +392,10 @@ function escapeHtml(str) {
     }[c]));
 }
 
+// Accepted image types and size cap for the optional company-logo upload.
+const LOGO_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
+const LOGO_MAX_BYTES = 2 * 1024 * 1024;
+
 /**
  * Assembles a payslip from identity fields, a gross figure, and optional
  * deductions. Reuses NetSalaryCalculator to derive the statutory deductions
@@ -1174,15 +1178,64 @@ class UIController {
             this.showPayslipReady();
         };
 
+        const errorEl = document.getElementById('ps-logo-error');
+        errorEl.textContent = '';
+
         const logoInput = document.getElementById('ps-logo');
         const file = logoInput.files && logoInput.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => build(e.target.result);
-            reader.readAsDataURL(file);
+            this.loadAndSanitizeLogo(file)
+                .then((cleanDataUrl) => build(cleanDataUrl))
+                .catch((message) => { errorEl.textContent = message; });
         } else {
             build('');
         }
+    }
+
+    /**
+     * Validates and sanitizes an uploaded logo entirely in the browser: checks
+     * the type and size, then re-encodes the pixels through a canvas so only a
+     * clean raster PNG is used (any embedded payload or metadata is discarded).
+     * @param {File} file - The user-selected image file.
+     * @returns {Promise<string>} Resolves with a clean PNG data URL, or rejects
+     * with a user-facing message.
+     */
+    loadAndSanitizeLogo(file) {
+        return new Promise((resolve, reject) => {
+            if (!LOGO_TYPES.includes(file.type)) {
+                reject('Please upload a PNG, JPEG, or WebP image.');
+                return;
+            }
+            if (file.size > LOGO_MAX_BYTES) {
+                reject('Image is too large. Please use a file under 2 MB.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onerror = () => reject('Could not read the selected file.');
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const maxDim = 512;
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > maxDim || height > maxDim) {
+                        const scale = Math.min(maxDim / width, maxDim / height);
+                        width = Math.round(width * scale);
+                        height = Math.round(height * scale);
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                img.onerror = () => reject('That file is not a valid image.');
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
     }
 
     /**
