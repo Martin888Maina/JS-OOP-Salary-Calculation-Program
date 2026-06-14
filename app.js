@@ -377,12 +377,360 @@ class NetSalaryCalculator {
 }
 
 /**
+ * Escapes the five HTML-significant characters so user-entered identity fields
+ * are rendered as text, never markup, inside the payslip preview.
+ * @param {string} str
+ * @returns {string} The escaped string.
+ */
+function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[c]));
+}
+
+/**
+ * Assembles a payslip from identity fields, a gross figure, and optional
+ * deductions. Reuses NetSalaryCalculator to derive the statutory deductions
+ * (PAYE, NSSF, SHIF, Housing Levy) so the payslip always agrees with the Net
+ * Salary calculator. Exposes the assembled data via a single getter.
+ */
+class Payslip {
+    #data;
+
+    constructor(input) {
+        const calculator = new NetSalaryCalculator({
+            basic: input.grossSalary,
+            allowances: 0,
+            otherBenefits: 0,
+            helb: 0,
+            sacco: input.sacco,
+            pensionTopUp: input.pension,
+            insurance: input.insurance,
+            childCare: 0,
+            commuter: 0,
+            houseAllowance: 0,
+            transportAllowance: 0,
+            otherAllowance: 0,
+            mortgageInterest: 0,
+            healthInsurance: 0,
+            lifeInsurance: 0,
+            isPWD: false
+        });
+        const b = calculator.getBreakdown();
+
+        const deductions = [
+            { label: 'PAYE', amount: b.netPaye },
+            { label: 'NSSF', amount: b.nssf },
+            { label: 'SHIF', amount: b.shif },
+            { label: 'Housing Levy', amount: b.ahl }
+        ];
+        if (input.sacco > 0) { deductions.push({ label: 'SACCO Loan', amount: input.sacco }); }
+        if (input.pension > 0) { deductions.push({ label: 'Pension Scheme', amount: input.pension }); }
+        if (input.insurance > 0) { deductions.push({ label: 'Insurance Premium', amount: input.insurance }); }
+
+        const totalDeductions = Math.round(
+            deductions.reduce((sum, d) => sum + d.amount, 0) * 100
+        ) / 100;
+
+        this.#data = {
+            employeeName: input.employeeName || '',
+            employeeId: input.employeeId || '',
+            kraPin: input.kraPin || '',
+            payPeriod: input.payPeriod || '',
+            logoDataUrl: input.logoDataUrl || '',
+            earnings: [{ label: 'Basic Salary', amount: b.gross }],
+            deductions: deductions,
+            totalEarnings: b.gross,
+            totalDeductions: totalDeductions,
+            netPay: b.takeHome
+        };
+    }
+
+    get data() {
+        return this.#data;
+    }
+}
+
+/**
+ * Exports a payslip to PNG, PDF, or DOCX. PNG and PDF are snapshots of the
+ * on-screen preview node (via html2canvas); DOCX is rebuilt programmatically
+ * from the payslip data so it stays fully editable in Word.
+ */
+class PayslipExporter {
+    /**
+     * @param {string} name - Raw filename seed.
+     * @returns {string} A filesystem-safe filename (no extension).
+     */
+    static #sanitize(name) {
+        return name.replace(/[^a-z0-9_-]+/gi, '_').replace(/^_+|_+$/g, '') || 'payslip';
+    }
+
+    static #filename(data) {
+        return PayslipExporter.#sanitize(`${data.employeeName}_${data.payPeriod}_payslip`);
+    }
+
+    /**
+     * Triggers a browser download for a Blob.
+     */
+    static #download(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
+
+    /**
+     * Snapshots the payslip node and downloads it as a PNG image.
+     */
+    static exportPng(node, data) {
+        return html2canvas(node, { scale: 2, backgroundColor: '#ffffff' }).then((canvas) => {
+            canvas.toBlob((blob) => {
+                PayslipExporter.#download(blob, PayslipExporter.#filename(data) + '.png');
+            });
+        });
+    }
+
+    /**
+     * Snapshots the payslip node and places it on an A4 PDF page.
+     */
+    static exportPdf(node, data) {
+        return html2canvas(node, { scale: 2, backgroundColor: '#ffffff' }).then((canvas) => {
+            const imgData = canvas.toDataURL('image/png');
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+
+            let width = pageWidth;
+            let height = canvas.height * width / canvas.width;
+            if (height > pageHeight) {
+                height = pageHeight;
+                width = canvas.width * height / canvas.height;
+            }
+            const x = (pageWidth - width) / 2;
+            pdf.addImage(imgData, 'PNG', x, 0, width, height);
+            pdf.save(PayslipExporter.#filename(data) + '.pdf');
+        });
+    }
+
+    /**
+     * Converts a data URL to the byte array a docx ImageRun expects.
+     */
+    static #dataUrlToBytes(dataUrl) {
+        const base64 = dataUrl.split(',')[1];
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        return bytes;
+    }
+
+    /**
+     * Crops a square circle out of the centre of an image data URL and returns
+     * it as a transparent-corner PNG data URL, so the logo reads as a circle in
+     * the Word document (matching the on-screen and PNG/PDF appearance).
+     * @param {string} dataUrl
+     * @returns {Promise<string>} A circular PNG data URL (or the original on error).
+     */
+    static #toCircularPng(dataUrl) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                const size = Math.min(img.width, img.height);
+                const canvas = document.createElement('canvas');
+                canvas.width = size;
+                canvas.height = size;
+                const ctx = canvas.getContext('2d');
+                ctx.beginPath();
+                ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.clip();
+                const sx = (img.width - size) / 2;
+                const sy = (img.height - size) / 2;
+                ctx.drawImage(img, sx, sy, size, size, 0, 0, size, size);
+                resolve(canvas.toDataURL('image/png'));
+            };
+            img.onerror = () => resolve(dataUrl);
+            img.src = dataUrl;
+        });
+    }
+
+    /**
+     * Builds and downloads an editable Word document mirroring the payslip.
+     * If a logo is present it is circle-cropped first so it matches the preview.
+     */
+    static exportDocx(data) {
+        if (data.logoDataUrl) {
+            return PayslipExporter.#toCircularPng(data.logoDataUrl).then((circular) =>
+                PayslipExporter.#buildDocx(data, circular));
+        }
+        return PayslipExporter.#buildDocx(data, '');
+    }
+
+    /**
+     * Assembles the Word document and triggers the download.
+     * @param {object} data - The payslip data.
+     * @param {string} logoDataUrl - A (circular) logo data URL, or '' for none.
+     */
+    static #buildDocx(data, logoDataUrl) {
+        const d = window.docx;
+
+        // Brand palette (matching styles.css) and shared border definitions.
+        const ACCENT = 'E85D04';
+        const ACCENT_DARK = 'D84A00';
+        const INK = '1A1A1A';
+        const MUTED = '5F5F5F';
+        const LIGHT = '8A8A8A';
+        const NET_FILL = 'FCEDE2';
+        const noBorder = { style: d.BorderStyle.NONE, size: 0, color: 'FFFFFF' };
+        const hairline = { style: d.BorderStyle.SINGLE, size: 2, color: 'EEEEEE' };
+        const blankBorders = {
+            top: noBorder, bottom: noBorder, left: noBorder, right: noBorder,
+            insideHorizontal: noBorder, insideVertical: noBorder
+        };
+
+        // One labelled line: left description, right-aligned amount.
+        const itemRow = (label, amount, bold) => new d.TableRow({
+            children: [
+                new d.TableCell({
+                    width: { size: 70, type: d.WidthType.PERCENTAGE },
+                    margins: { top: 60, bottom: 60 },
+                    children: [new d.Paragraph({ children: [new d.TextRun({ text: label, bold: !!bold, color: bold ? INK : MUTED })] })]
+                }),
+                new d.TableCell({
+                    width: { size: 30, type: d.WidthType.PERCENTAGE },
+                    margins: { top: 60, bottom: 60 },
+                    children: [new d.Paragraph({ alignment: d.AlignmentType.RIGHT, children: [new d.TextRun({ text: formatKES(amount), bold: !!bold, color: INK })] })]
+                })
+            ]
+        });
+
+        // An itemised section: rows + a bold subtotal row, with hairline dividers.
+        const itemTable = (items, totalLabel, totalAmount) => {
+            const rows = items.map((it) => itemRow(it.label, it.amount, false));
+            rows.push(itemRow(totalLabel, totalAmount, true));
+            return new d.Table({
+                width: { size: 100, type: d.WidthType.PERCENTAGE },
+                borders: {
+                    top: noBorder, bottom: noBorder, left: noBorder, right: noBorder,
+                    insideHorizontal: hairline, insideVertical: noBorder
+                },
+                rows: rows
+            });
+        };
+
+        // Accent-coloured uppercase section heading with an underline rule.
+        const sectionTitle = (text) => new d.Paragraph({
+            spacing: { before: 260, after: 100 },
+            border: { bottom: { style: d.BorderStyle.SINGLE, size: 4, color: ACCENT } },
+            children: [new d.TextRun({ text: text.toUpperCase(), bold: true, color: ACCENT, size: 20, characterSpacing: 20 })]
+        });
+
+        // Employee meta as a single borderless row of three key/value cells.
+        const metaCell = (key, value, align) => {
+            const alignment = align === 'center' ? d.AlignmentType.CENTER
+                : align === 'right' ? d.AlignmentType.RIGHT
+                : d.AlignmentType.LEFT;
+            return new d.TableCell({
+                width: { size: 33, type: d.WidthType.PERCENTAGE },
+                margins: { top: 40, bottom: 40 },
+                children: [
+                    new d.Paragraph({ alignment: alignment, children: [new d.TextRun({ text: key.toUpperCase(), color: LIGHT, size: 14, characterSpacing: 16 })] }),
+                    new d.Paragraph({ alignment: alignment, children: [new d.TextRun({ text: value || '—', size: 20, color: INK })] })
+                ]
+            });
+        };
+        const metaTable = new d.Table({
+            width: { size: 100, type: d.WidthType.PERCENTAGE },
+            borders: blankBorders,
+            rows: [
+                new d.TableRow({ children: [
+                    metaCell('Employee No', data.employeeId, 'left'),
+                    metaCell('Pay Period', data.payPeriod, 'center'),
+                    metaCell('KRA PIN', data.kraPin, 'right')
+                ] })
+            ]
+        });
+
+        // Net Pay: a single shaded row, amount in accent.
+        const netTable = new d.Table({
+            width: { size: 100, type: d.WidthType.PERCENTAGE },
+            borders: blankBorders,
+            rows: [new d.TableRow({
+                children: [
+                    new d.TableCell({
+                        width: { size: 60, type: d.WidthType.PERCENTAGE },
+                        shading: { fill: NET_FILL },
+                        margins: { top: 120, bottom: 120, left: 120 },
+                        children: [new d.Paragraph({ children: [new d.TextRun({ text: 'NET PAY', bold: true, color: MUTED, size: 20, characterSpacing: 20 })] })]
+                    }),
+                    new d.TableCell({
+                        width: { size: 40, type: d.WidthType.PERCENTAGE },
+                        shading: { fill: NET_FILL },
+                        margins: { top: 120, bottom: 120, right: 120 },
+                        children: [new d.Paragraph({ alignment: d.AlignmentType.RIGHT, children: [new d.TextRun({ text: formatKES(data.netPay), bold: true, color: ACCENT_DARK, size: 30 })] })]
+                    })
+                ]
+            })]
+        });
+
+        const children = [];
+        if (logoDataUrl) {
+            try {
+                children.push(new d.Paragraph({
+                    alignment: d.AlignmentType.CENTER,
+                    children: [new d.ImageRun({
+                        data: PayslipExporter.#dataUrlToBytes(logoDataUrl),
+                        transformation: { width: 80, height: 80 }
+                    })]
+                }));
+            } catch (err) {
+                // A malformed logo should never block the document — skip it.
+            }
+        }
+        children.push(new d.Paragraph({
+            alignment: d.AlignmentType.CENTER,
+            spacing: { after: 200 },
+            children: [new d.TextRun({ text: data.employeeName || '—', bold: true, size: 32, color: INK })]
+        }));
+        children.push(metaTable);
+        children.push(sectionTitle('Earnings'));
+        children.push(itemTable(data.earnings, 'Total Earnings', data.totalEarnings));
+        children.push(sectionTitle('Deductions'));
+        children.push(itemTable(data.deductions, 'Total Deductions', data.totalDeductions));
+        children.push(new d.Paragraph({ text: '', spacing: { after: 200 } }));
+        children.push(netTable);
+        children.push(new d.Paragraph({
+            alignment: d.AlignmentType.CENTER,
+            spacing: { before: 300 },
+            children: [new d.TextRun({ text: 'This is a computer generated payslip and does not require a signature.', italics: true, size: 16, color: LIGHT })]
+        }));
+
+        const doc = new d.Document({ sections: [{ children: children }] });
+
+        return d.Packer.toBlob(doc).then((blob) => {
+            PayslipExporter.#download(blob, PayslipExporter.#filename(data) + '.docx');
+        });
+    }
+}
+
+/**
  * Manages form interactions, employee type switching, and result rendering.
  * A single instance is created on DOMContentLoaded.
  */
 class UIController {
     constructor() {
         this.currentType = 'employee';
+        this.currentPayslip = null;
         this.initializeEventListeners();
     }
 
@@ -424,6 +772,30 @@ class UIController {
             e.preventDefault();
             this.handleNetSubmit();
         });
+
+        document.getElementById('payslipForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handlePayslipSubmit();
+        });
+
+        document.getElementById('viewPayslipBtn').addEventListener('click', () => this.openPayslipModal());
+        document.getElementById('closePayslipBtn').addEventListener('click', () => this.closePayslipModal());
+
+        const modal = document.getElementById('payslipModal');
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                this.closePayslipModal();
+            }
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.closePayslipModal();
+            }
+        });
+
+        document.getElementById('exportPng').addEventListener('click', () => this.exportPayslip('png'));
+        document.getElementById('exportPdf').addEventListener('click', () => this.exportPayslip('pdf'));
+        document.getElementById('exportDocx').addEventListener('click', () => this.exportPayslip('docx'));
 
         document.querySelectorAll('.collapsible-header').forEach(header => {
             header.addEventListener('click', () => this.toggleCollapsible(header));
@@ -771,10 +1143,167 @@ class UIController {
     }
 
     /**
+     * Reads the payslip form, validates the gross figure, reads any logo file,
+     * builds a Payslip, and renders the preview. Identity fields are optional;
+     * an invalid KRA PIN warns but never blocks (per the guide).
+     */
+    handlePayslipSubmit() {
+        const gross = parseFloat(document.getElementById('ps-gross').value);
+        if (isNaN(gross) || gross < 0) {
+            return;
+        }
+
+        const pin = document.getElementById('ps-pin').value.trim();
+        if (pin && !/^[A-Z]\d{9}[A-Z]$/.test(pin)) {
+            console.warn('KRA PIN does not match the expected format (e.g. A012345678F).');
+        }
+
+        const build = (logoDataUrl) => {
+            const input = {
+                employeeName: document.getElementById('ps-name').value.trim(),
+                employeeId: document.getElementById('ps-id').value.trim(),
+                kraPin: pin,
+                payPeriod: document.getElementById('ps-period').value.trim(),
+                grossSalary: gross,
+                sacco: parseFloat(document.getElementById('ps-sacco').value) || 0,
+                pension: parseFloat(document.getElementById('ps-pension').value) || 0,
+                insurance: parseFloat(document.getElementById('ps-insurance').value) || 0,
+                logoDataUrl: logoDataUrl || ''
+            };
+            this.currentPayslip = new Payslip(input);
+            this.showPayslipReady();
+        };
+
+        const logoInput = document.getElementById('ps-logo');
+        const file = logoInput.files && logoInput.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => build(e.target.result);
+            reader.readAsDataURL(file);
+        } else {
+            build('');
+        }
+    }
+
+    /**
+     * Shows a brief loading effect in the results column, then reveals a
+     * "View Payslip" button. The payslip itself is not rendered here — it opens
+     * full-screen on demand so it is never squeezed into the narrow column.
+     */
+    showPayslipReady() {
+        const output = document.getElementById('payslipOutput');
+        const loading = document.getElementById('payslipLoading');
+        const ready = document.getElementById('payslipReady');
+
+        output.style.display = 'block';
+        loading.style.display = 'flex';
+        ready.style.display = 'none';
+        output.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        setTimeout(() => {
+            loading.style.display = 'none';
+            ready.style.display = 'block';
+        }, 800);
+    }
+
+    /**
+     * Renders the current payslip full-width and opens the full-screen overlay.
+     */
+    openPayslipModal() {
+        if (!this.currentPayslip) {
+            return;
+        }
+        this.renderPayslip(this.currentPayslip.data);
+        document.getElementById('payslipModal').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    /**
+     * Closes the full-screen payslip overlay and restores background scrolling.
+     */
+    closePayslipModal() {
+        document.getElementById('payslipModal').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    /**
+     * Renders the payslip preview node (full-width, inside the overlay).
+     * @param {object} d - The payslip data from Payslip.data.
+     */
+    renderPayslip(d) {
+        const row = (label, amount, cls = '') =>
+            `<div class="ps-row ${cls}"><span>${escapeHtml(label)}</span><span>${formatKES(amount)}</span></div>`;
+
+        const earningsRows = d.earnings.map((e) => row(e.label, e.amount)).join('');
+        const deductionRows = d.deductions.map((x) => row(x.label, x.amount)).join('');
+        const metaItem = (key, value, align = 'left') => {
+            const alignClass = align === 'center' ? ' ps-center' : align === 'right' ? ' ps-right' : '';
+            return `<div class="ps-meta-item${alignClass}"><span class="ps-k">${key}</span><span class="ps-v">${escapeHtml(value) || '—'}</span></div>`;
+        };
+        const logo = d.logoDataUrl
+            ? `<img src="${d.logoDataUrl}" alt="Company logo" class="payslip-logo">`
+            : '';
+
+        document.getElementById('payslipPreview').innerHTML = `
+            <header class="ps-head">
+                ${logo}
+                <h2 class="ps-name">${escapeHtml(d.employeeName) || '—'}</h2>
+            </header>
+            <section class="ps-meta">
+                ${metaItem('Employee No', d.employeeId, 'left')}
+                ${metaItem('Pay Period', d.payPeriod, 'center')}
+                ${metaItem('KRA PIN', d.kraPin, 'right')}
+            </section>
+            <section class="ps-section">
+                <h3 class="ps-section-title">Earnings</h3>
+                ${earningsRows}
+                ${row('Total Earnings', d.totalEarnings, 'ps-subtotal')}
+            </section>
+            <section class="ps-section">
+                <h3 class="ps-section-title">Deductions</h3>
+                ${deductionRows}
+                ${row('Total Deductions', d.totalDeductions, 'ps-subtotal')}
+            </section>
+            <div class="ps-net">
+                <span class="ps-net-label">Net Pay</span>
+                <span class="ps-net-value">${formatKES(d.netPay)}</span>
+            </div>
+            <p class="ps-foot">This is a computer generated payslip and does not require a signature.</p>
+        `;
+    }
+
+    /**
+     * Dispatches the requested export format for the current payslip.
+     * @param {string} format - 'png', 'pdf', or 'docx'.
+     */
+    exportPayslip(format) {
+        if (!this.currentPayslip) {
+            return;
+        }
+        const node = document.getElementById('payslipPreview');
+        const data = this.currentPayslip.data;
+        if (format === 'png') {
+            PayslipExporter.exportPng(node, data);
+        } else if (format === 'pdf') {
+            PayslipExporter.exportPdf(node, data);
+        } else if (format === 'docx') {
+            PayslipExporter.exportDocx(data);
+        }
+    }
+
+    /**
      * @param {string} formId - The id attribute of the form element to reset.
      */
     clearForm(formId) {
         document.getElementById(formId).reset();
+        if (formId === 'payslipForm') {
+            this.currentPayslip = null;
+            document.getElementById('payslipPreview').innerHTML = '';
+            document.getElementById('payslipOutput').style.display = 'none';
+            document.getElementById('payslipLoading').style.display = 'flex';
+            document.getElementById('payslipReady').style.display = 'none';
+            this.closePayslipModal();
+        }
     }
 
     /**

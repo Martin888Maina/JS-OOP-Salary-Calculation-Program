@@ -556,6 +556,317 @@ body {
     font-weight: 500;
 }
 
+.badge-payslip {
+    background: rgba(232, 93, 4, 0.15);
+    color: var(--primary-dark);
+}
+
+/* Logo upload field */
+.form-group input[type="file"] {
+    padding: var(--spacing-xs);
+    border: 1px dashed var(--border-color);
+    background: var(--background);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* Payslip Generator output */
+.payslip-output {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+/* Loading + ready states (shown in the results column) */
+.payslip-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-xl) var(--spacing-md);
+    color: var(--text-secondary);
+}
+
+.spinner {
+    width: 44px;
+    height: 44px;
+    border: 4px solid var(--border-color);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.payslip-ready {
+    text-align: center;
+    padding: var(--spacing-lg) var(--spacing-md);
+}
+
+.payslip-ready p {
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-md);
+}
+
+.payslip-ready .submit-btn {
+    width: auto;
+    min-width: 200px;
+}
+
+/* Full-screen payslip overlay */
+.payslip-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.6);
+    overflow-y: auto;
+    padding: var(--spacing-lg) var(--spacing-md);
+}
+
+.payslip-modal.open {
+    display: block;
+}
+
+.payslip-modal-content {
+    max-width: 860px;
+    margin: 0 auto;
+}
+
+.payslip-modal-bar {
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+}
+
+.payslip-modal-bar .export-btns {
+    flex: 1;
+    justify-content: flex-end;
+}
+
+.modal-close {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.modal-close:hover {
+    border-color: #d9534f;
+    color: #d9534f;
+    background: rgba(217, 83, 79, 0.05);
+}
+
+.payslip-modal-scroll {
+    display: flex;
+    justify-content: center;
+}
+
+.payslip-modal-scroll .payslip {
+    width: 100%;
+    max-width: 800px;
+    box-shadow: var(--shadow-lg);
+}
+
+/* Payslip sheet — single-column, minimal & elegant */
+.payslip {
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-xl);
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+    .payslip {
+        padding: var(--spacing-lg) var(--spacing-md);
+    }
+}
+
+.ps-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+    text-align: center;
+}
+
+.payslip-logo {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.ps-name {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+.ps-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm) var(--spacing-lg);
+    margin: var(--spacing-lg) 0;
+}
+
+.ps-meta-item {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.ps-meta-item.ps-center {
+    align-items: center;
+    text-align: center;
+}
+
+.ps-meta-item.ps-right {
+    align-items: flex-end;
+    text-align: right;
+}
+
+.ps-k {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-light);
+}
+
+.ps-v {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.ps-section {
+    margin-bottom: var(--spacing-lg);
+}
+
+.ps-section-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--primary-color);
+    margin-bottom: var(--spacing-xs);
+    padding-bottom: var(--spacing-xs);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.ps-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.ps-row span:last-child {
+    color: var(--text-primary);
+}
+
+.ps-subtotal {
+    margin-top: 4px;
+    padding-top: var(--spacing-xs);
+    border-top: 1px solid var(--border-color);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.ps-subtotal span:last-child {
+    font-weight: 700;
+}
+
+.ps-net {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: var(--radius-md);
+    background: rgba(232, 93, 4, 0.06);
+    border: 1px solid rgba(232, 93, 4, 0.15);
+}
+
+.ps-net-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-secondary);
+}
+
+.ps-net-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+}
+
+.ps-foot {
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+    font-size: 0.72rem;
+    color: var(--text-light);
+}
+
+.export-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.export-btn {
+    flex: 1;
+    min-width: 120px;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: rgba(232, 93, 4, 0.05);
+}
+
+.export-btn:active {
+    transform: translateY(1px);
+}
+
 .result-details {
     display: grid;
     gap: var(--spacing-sm);
