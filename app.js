@@ -1248,14 +1248,14 @@ class UIController {
         const loading = document.getElementById('payslipLoading');
         const ready = document.getElementById('payslipReady');
 
-        output.style.display = 'block';
-        loading.style.display = 'flex';
-        ready.style.display = 'none';
+        output.classList.remove('hidden');
+        loading.classList.remove('hidden');
+        ready.classList.add('hidden');
         output.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
         setTimeout(() => {
-            loading.style.display = 'none';
-            ready.style.display = 'block';
+            loading.classList.add('hidden');
+            ready.classList.remove('hidden');
         }, 800);
     }
 
@@ -1352,9 +1352,9 @@ class UIController {
         if (formId === 'payslipForm') {
             this.currentPayslip = null;
             document.getElementById('payslipPreview').innerHTML = '';
-            document.getElementById('payslipOutput').style.display = 'none';
-            document.getElementById('payslipLoading').style.display = 'flex';
-            document.getElementById('payslipReady').style.display = 'none';
+            document.getElementById('payslipOutput').classList.add('hidden');
+            document.getElementById('payslipLoading').classList.remove('hidden');
+            document.getElementById('payslipReady').classList.add('hidden');
             this.closePayslipModal();
         }
     }

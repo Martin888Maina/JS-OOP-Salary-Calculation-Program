@@ -567,6 +567,11 @@ body {
     margin-top: 4px;
 }
 
+/* Utility: hide an element without an inline style (keeps a strict CSP) */
+.hidden {
+    display: none !important;
+}
+
 /* Logo upload field */
 .form-group input[type="file"] {
     padding: var(--spacing-xs);
