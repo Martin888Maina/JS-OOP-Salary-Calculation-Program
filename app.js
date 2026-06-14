@@ -1066,7 +1066,7 @@ class UIController {
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Rate per Hour:</span>
-                    <span class="detail-value">$${employee.amountperHour.toFixed(2)}</span>
+                    <span class="detail-value">${formatKES(employee.amountperHour)}</span>
                 </div>
             `;
         } else if (type === 'fulltime') {
@@ -1083,7 +1083,7 @@ class UIController {
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Compensation per Hour:</span>
-                    <span class="detail-value">$${employee.compensationperHour.toFixed(2)}</span>
+                    <span class="detail-value">${formatKES(employee.compensationperHour)}</span>
                 </div>
             `;
         } else if (type === 'parttime') {
@@ -1100,7 +1100,7 @@ class UIController {
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Remuneration per Hour:</span>
-                    <span class="detail-value">$${employee.remunerationperHour.toFixed(2)}</span>
+                    <span class="detail-value">${formatKES(employee.remunerationperHour)}</span>
                 </div>
             `;
         } else if (type === 'gross') {
@@ -1124,10 +1124,8 @@ class UIController {
 
         // Gross results carry no employee name; the other types use the full name.
         const cardTitle = type === 'gross' ? 'Gross Salary' : employee.fullName;
-        // Gross is reported in KES; the hourly-based types stay in USD.
-        const totalDisplay = type === 'gross'
-            ? formatKES(totalValue)
-            : `$${totalValue.toFixed(2)}`;
+        // All monetary values are shown in Kenyan Shillings.
+        const totalDisplay = formatKES(totalValue);
 
         return `
             <div class="result-card">
